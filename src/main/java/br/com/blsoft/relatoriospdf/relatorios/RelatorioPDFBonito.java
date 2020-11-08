@@ -34,14 +34,11 @@ public class RelatorioPDFBonito implements Relatorio {
 
     public RelatorioPDFBonito(Venda venda) {
         this.venda = venda;
-        documentoPDF = new Document(PageSize.A4, 50, 50, 50, 50);
+        this.documentoPDF = new Document(PageSize.A4, 50, 50, 50, 50);
         try {
-            PdfWriter.getInstance(documentoPDF, new FileOutputStream(caminhoRelatorio));
-            HeaderFooter paginacao = new HeaderFooter(new Phrase("Pág.", new Font(Font.BOLD)), true);
-            paginacao.setAlignment(Element.ALIGN_RIGHT);
-            paginacao.setBorder(Rectangle.NO_BORDER);
-            documentoPDF.setHeader(paginacao);
-            documentoPDF.open();
+            PdfWriter.getInstance(this.documentoPDF, new FileOutputStream(caminhoRelatorio));
+            this.adicionarPaginacao();
+            this.documentoPDF.open();
         } catch (DocumentException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e) {
@@ -51,17 +48,62 @@ public class RelatorioPDFBonito implements Relatorio {
 
     @Override
     public void gerarCabecalho() {
-        Image imgTitulo = null;
-        try {
-            imgTitulo = Image.getInstance("LOGO_FLAT.jpg");
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "IMG Não encontrada", "Aviso", JOptionPane.WARNING_MESSAGE);
-        }
-        if (imgTitulo != null) {
-            imgTitulo.setAlignment(Element.ALIGN_CENTER);
-            this.documentoPDF.add(imgTitulo);
-        }
+        this.adicionarImagem("LOGO_FLAT.jpg");
+        this.adicionarParagrafoTitulo();
+        this.pularLinha();
+        this.adicionarDadosCliente();
+        this.pularLinha();
+        this.adicionarQuebraDeSessao();
+    }
 
+    @Override
+    public void gerarCorpo() {
+        this.adicionarParagrafoItensVendidosTitulo();
+        PdfPTable tableProdutos = this.criarTabelaComCabecalho();
+        this.adicionarProdutosATabela(tableProdutos);
+        this.documentoPDF.add(tableProdutos);
+        this.pularLinha();
+        this.adicionarTotalDaVenda();
+    }
+
+    @Override
+    public void gerarRodape() {
+        this.adicionarQuebraDeSessao();
+        this.pularLinha();
+        this.adicionarRodaPe();
+    }
+
+    @Override
+    public void imprimir() {
+        if (this.documentoPDF != null && this.documentoPDF.isOpen()) {
+            documentoPDF.close();
+        }
+    }
+
+    private void adicionarPaginacao() {
+        HeaderFooter paginacao = new HeaderFooter(new Phrase("Pág.", new Font(Font.BOLD)), true);
+        paginacao.setAlignment(Element.ALIGN_RIGHT);
+        paginacao.setBorder(Rectangle.NO_BORDER);
+        documentoPDF.setHeader(paginacao);
+    }
+
+    private void adicionarDadosCliente() {
+        Chunk chunkDataCliente = new Chunk();
+        chunkDataCliente.append("Cliente: " + this.venda.getNomeCliente());
+        chunkDataCliente.append(this.criarDataFormatada());
+
+        Paragraph paragrafoDataCliente = new Paragraph();
+        paragrafoDataCliente.add(chunkDataCliente);
+        this.documentoPDF.add(paragrafoDataCliente);
+    }
+
+    private void adicionarQuebraDeSessao() {
+        Paragraph paragrafoSessao = new Paragraph("__________________________________________________________");
+        paragrafoSessao.setAlignment(Element.ALIGN_CENTER);
+        this.documentoPDF.add(paragrafoSessao);
+    }
+
+    private void adicionarParagrafoTitulo() {
         Paragraph paragrafoTitulo = new Paragraph();
         paragrafoTitulo.setAlignment(Element.ALIGN_CENTER);
         Chunk cTitulo = new Chunk("RELATÓRIO DE VENDAS BONITO");
@@ -69,11 +111,26 @@ public class RelatorioPDFBonito implements Relatorio {
         cTitulo.setBackground(Color.lightGray, 2, 2, 2, 2);
         paragrafoTitulo.add(cTitulo);
         documentoPDF.add(paragrafoTitulo);
+    }
 
+    private void adicionarImagem(String caminhoImagem) {
+        Image imgTitulo = null;
+        try {
+            imgTitulo = Image.getInstance(caminhoImagem);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "IMG Não encontrada", "Aviso", JOptionPane.WARNING_MESSAGE);
+        }
+        if (imgTitulo != null) {
+            imgTitulo.setAlignment(Element.ALIGN_CENTER);
+            this.documentoPDF.add(imgTitulo);
+        }
+    }
+
+    private void pularLinha() {
         this.documentoPDF.add(new Paragraph(" "));
+    }
 
-        Paragraph paragrafoData = new Paragraph();
-
+    private String criarDataFormatada() {
         StringBuilder dataVenda = new StringBuilder();
         dataVenda.append(" - Data da venda: ");
         dataVenda.append(this.venda.getDataVenda().getDayOfMonth());
@@ -81,26 +138,10 @@ public class RelatorioPDFBonito implements Relatorio {
         dataVenda.append(this.venda.getDataVenda().getMonthValue());
         dataVenda.append("/");
         dataVenda.append(this.venda.getDataVenda().getYear());
-
-        Chunk dataCliente = new Chunk();
-        dataCliente.append("Cliente: " + this.venda.getNomeCliente());
-        dataCliente.append(dataVenda.toString());
-        paragrafoData.add(dataCliente);
-        this.documentoPDF.add(paragrafoData);
-        Paragraph paragrafoSessao = new Paragraph("__________________________________________________________");
-        paragrafoSessao.setAlignment(Element.ALIGN_CENTER);
-        this.documentoPDF.add(paragrafoSessao);
-        this.documentoPDF.add(new Paragraph(" "));
+        return dataVenda.toString();
     }
 
-    @Override
-    public void gerarCorpo() {
-        Paragraph pItensVendidos = new Paragraph();
-        pItensVendidos.setAlignment(Element.ALIGN_CENTER);
-        pItensVendidos.add(new Chunk("ITENS VENDIDOS ", new Font(Font.TIMES_ROMAN, 16)));
-        documentoPDF.add(new Paragraph(pItensVendidos));
-        documentoPDF.add(new Paragraph(" "));
-
+    private PdfPTable criarTabelaComCabecalho() {
         // tabela com 4 colunas
         PdfPTable tableProdutos = new PdfPTable(4);
         tableProdutos.setWidthPercentage(98);
@@ -126,8 +167,11 @@ public class RelatorioPDFBonito implements Relatorio {
         celulaTitulo.setBackgroundColor(Color.LIGHT_GRAY);
         tableProdutos.addCell(celulaTitulo);
 
-        int contador = 1;
+        return tableProdutos;
+    }
 
+    private void adicionarProdutosATabela(PdfPTable tableProdutos) {
+        int contador = 1;
         for (Produto produto : this.venda.getProdutosVendidos()) {
 
             PdfPCell celulaNome = new PdfPCell(new Phrase(produto.getNome()));
@@ -152,9 +196,9 @@ public class RelatorioPDFBonito implements Relatorio {
 
             contador++;
         }
-        this.documentoPDF.add(tableProdutos);
+    }
 
-        this.documentoPDF.add(new Paragraph(" "));
+    private void adicionarTotalDaVenda() {
 
         Paragraph pTotal = new Paragraph();
         pTotal.setAlignment(Element.ALIGN_RIGHT);
@@ -163,23 +207,19 @@ public class RelatorioPDFBonito implements Relatorio {
         this.documentoPDF.add(pTotal);
     }
 
-    @Override
-    public void gerarRodape() {
-        Paragraph paragrafoSessao = new Paragraph("__________________________________________________________");
-        paragrafoSessao.setAlignment(Element.ALIGN_CENTER);
-        this.documentoPDF.add(paragrafoSessao);
-        this.documentoPDF.add(new Paragraph(" "));
+    private void adicionarParagrafoItensVendidosTitulo() {
+        Paragraph pItensVendidos = new Paragraph();
+        pItensVendidos.setAlignment(Element.ALIGN_CENTER);
+        pItensVendidos.add(new Chunk("ITENS VENDIDOS ", new Font(Font.TIMES_ROMAN, 16)));
+        documentoPDF.add(new Paragraph(pItensVendidos));
+        documentoPDF.add(new Paragraph(" "));
+    }
+
+    private void adicionarRodaPe() {
         Paragraph pRodape = new Paragraph();
         pRodape.setAlignment(Element.ALIGN_CENTER);
         pRodape.add(new Chunk("www.blsoft.com.br/like", new Font(Font.TIMES_ROMAN, 14)));
         this.documentoPDF.add(pRodape);
-    }
-
-    @Override
-    public void imprimir() {
-        if (this.documentoPDF != null && this.documentoPDF.isOpen()) {
-            documentoPDF.close();
-        }
     }
 
 }
