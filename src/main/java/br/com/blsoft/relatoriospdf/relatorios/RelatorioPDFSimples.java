@@ -103,7 +103,9 @@ public class RelatorioPDFSimples implements Relatorio {
 
     @Override
     public void imprimir() {
-        documentoPDF.close();
+        if(this.documentoPDF != null && this.documentoPDF.isOpen()){
+            documentoPDF.close();
+        }
     }
 
 }

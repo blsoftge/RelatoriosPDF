@@ -6,7 +6,7 @@ import java.util.Vector;
 
 import br.PrimeiroPDF;
 import br.com.blsoft.relatoriospdf.relatorios.Relatorio;
-import br.com.blsoft.relatoriospdf.relatorios.RelatorioPDFSimples;
+import br.com.blsoft.relatoriospdf.relatorios.RelatorioPDFBonito;
 import br.com.blsoft.relatoriospdf.vendas.Produto;
 import br.com.blsoft.relatoriospdf.vendas.Venda;
 
@@ -22,8 +22,15 @@ public class App
         venda.addProdutoAoCarrinho(new Produto("Pinga", 2, 0.10));
         venda.addProdutoAoCarrinho(new Produto("Pão com mortadela", 1, 1.0));
         venda.addProdutoAoCarrinho(new Produto("Linguiça", 2, 0.90));
-
-        Relatorio relatorioPdfSimples = new RelatorioPDFSimples(venda);
+        venda.addProdutoAoCarrinho(new Produto("Gorgonzola", 3, 10.90));
+        venda.addProdutoAoCarrinho(new Produto("Pinga", 2, 0.10));
+        venda.addProdutoAoCarrinho(new Produto("Pão com mortadela", 1, 1.0));
+        venda.addProdutoAoCarrinho(new Produto("Linguiça", 2, 0.90));
+        venda.addProdutoAoCarrinho(new Produto("Gorgonzola", 3, 10.90));
+        venda.addProdutoAoCarrinho(new Produto("Pinga", 2, 0.10));
+        venda.addProdutoAoCarrinho(new Produto("Pão com mortadela", 1, 1.0));
+        venda.addProdutoAoCarrinho(new Produto("Linguiça", 2, 0.90));
+        Relatorio relatorioPdfSimples = new RelatorioPDFBonito(venda);
         relatorioPdfSimples.gerarCabecalho();
         relatorioPdfSimples.gerarCorpo();
         relatorioPdfSimples.gerarRodape();
